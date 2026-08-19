@@ -7,6 +7,7 @@ import AnalyticsView from './components/AnalyticsView';
 import BusinessDashboard from './components/BusinessDashboard';
 import TechWorkspace from './components/TechWorkspace';
 import Toast from './components/Toast';
+import Papa from 'papaparse';
 import { getTickets, deleteTicket } from './services/api';
 
 function App() {
@@ -44,23 +45,93 @@ function App() {
     setUser(null);
   };
 
-  const exportToCSV = () => {
-    const headers = ['ID', 'Titlu', 'Tip', 'Severitate', 'Status', 'Asignat', 'Creat de'];
-    const rows = tickets.map(t => [t.id, `"${t.title}"`, t.ticket_type, t.severity, t.status, `"${t.assignee}"`, `"${t.created_by}"`]);
-    
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', 'raport_bugtracker_licenta.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast('Raportul CSV a fost descărcat cu succes!', 'success');
-  };
+ const exportToCSV = () => {
+  const data = tickets.map(t => ({
+    ID: t.id,
+    Titlu: t.title,
+    Tip: t.ticket_type,
+    Severitate: t.severity,
+    Status: t.status,
+    Asignat: t.assignee,
+    Creat_de: t.created_by
+  }));
+
+  const csv = Papa.unparse(data, {
+    delimiter: ";", // Folosim punct și virgulă pentru Excel România
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'raport_bugtracker.csv');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('Raport CSV descărcat!', 'success');
+};
 
   const handlePrintReport = () => {
-    window.print();
+    // Cream un element temporar de tip fereastră curat dedicat doar pentru raportul de licență
+    const printWindow = window.open('', '_blank');
+    
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Raport Licență - BugTracker</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+            h1 { color: #0f172a; border-bottom: 2px solid #2563eb; padding-bottom: 10px; }
+            .metrics { display: flex; gap: 20px; margin-bottom: 20px; }
+            .card { background: #f8fafc; border: 1px solid #cbd5e1; padding: 15px; border-radius: 8px; flex: 1; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
+            th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; }
+            th { background: #0f172a; color: #white; }
+          </style>
+        </head>
+        <body>
+          <h1>Raport Tehnic și Management - BugTracker</h1>
+          <p>Generat în data de: ${new Date().toLocaleString()}</p>
+          
+          <h3>Sumar Tichete Active: Total ${tickets.length}</h3>
+          
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Titlu</th>
+                <th>Tip</th>
+                <th>Severitate</th>
+                <th>Status</th>
+                <th>Asignat</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tickets.map(t => `
+                <tr>
+                  <td>#${t.id}</td>
+                  <td>${t.title}</td>
+                  <td>${t.ticket_type}</td>
+                  <td>${t.severity}</td>
+                  <td>${t.status}</td>
+                  <td>${t.assignee}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          
+          <script>
+            window.onload = function() {
+              window.print();
+            }
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
   };
 
   if (!user) {
