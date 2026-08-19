@@ -84,7 +84,7 @@ function App() {
       {/* Navbar Superior */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0f172a', color: '#fff', padding: '16px 24px', borderRadius: '10px', marginBottom: '20px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '20px', letterSpacing: '-0.5px' }}>BugTracker Enterprise</h2>
+          <h2 style={{ margin: 0, fontSize: '20px', letterSpacing: '-0.5px' }}>BugTracker</h2>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <span style={{ fontSize: '14px' }}>Conectat: <strong>{user.username}</strong> <span style={{ background: '#334155', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', marginLeft: '6px' }}>{user.role}</span></span>
@@ -261,4 +261,4 @@ function App() {
   );
 }
 
-export default App; // Atenție la export default App mai jos
+export default App;
