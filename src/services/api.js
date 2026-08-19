@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+// Detectează automat dacă suntem pe local sau pe producție (Vercel)
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5000/api'
+  : 'https://bugtracker-licenta.onrender.com'; // Înlocuiește cu linkul tău exact de pe Render dacă difera
+
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: API_URL,
 });
 
 // Adaugă token-ul JWT automat la cereri dacă există
@@ -17,8 +22,6 @@ export const registerUser = (userData) => API.post('/register', userData);
 export const loginUser = (credentials) => API.post('/login', credentials);
 export const getPendingUsers = () => API.get('/admin/pending-users');
 export const approveUser = (id) => API.put(`/admin/approve-user/${id}`);
-
-// ... păstrează ce aveai deja (registerUser, loginUser, getPendingUsers, approveUser) și adaugă:
 
 export const getTickets = () => API.get('/tickets');
 export const createTicket = (ticketData) => API.post('/tickets', ticketData);
