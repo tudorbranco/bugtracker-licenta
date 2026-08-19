@@ -3,7 +3,7 @@ import axios from 'axios';
 // Detectează automat dacă suntem pe local sau pe producție (Vercel)
 const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:5000/api'
-  : 'https://bugtracker-licenta.onrender.com'; // Înlocuiește cu linkul tău exact de pe Render dacă difera
+  : 'https://bugtracker-licenta.onrender.com/api'; // Înlocuiește cu linkul tău exact de pe Render dacă difera
 
 const API = axios.create({
   baseURL: API_URL,
