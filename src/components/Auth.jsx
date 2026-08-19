@@ -36,7 +36,7 @@ function Auth({ onLoginSuccess }) {
       <div style={{ width: '100%', maxWidth: '420px', background: '#ffffff', padding: '40px', borderRadius: '12px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.5px' }}>
-            {isRegister ? 'Creare Cont Nou' : 'BugTracker Enterprise'}
+            {isRegister ? 'Creare Cont Nou' : 'BugTracker'}
           </h2>
           <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>
             {isRegister ? 'Completează datele pentru a solicita acces' : 'Introdu datele pentru a accesa workspace-ul'}
