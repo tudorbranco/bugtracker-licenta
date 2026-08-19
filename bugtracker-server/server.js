@@ -10,14 +10,21 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Conexiunea la baza de date PostgreSQL
-const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT,
-});
+// Conexiunea la baza de date PostgreSQL (Suportă atât DATABASE_URL în cloud, cât și variabilele locale)
+const pool = new Pool(
+  process.env.DATABASE_URL
+    ? {
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+      }
+    : {
+        user: process.env.DB_USER,
+        host: process.env.DB_HOST,
+        database: process.env.DB_NAME,
+        password: process.env.DB_PASSWORD,
+        port: process.env.DB_PORT,
+      }
+);
 
 // Configurare Nodemailer pentru trimiterea email-urilor de notificare către admin
 const transporter = nodemailer.createTransport({
@@ -29,7 +36,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // 1. ÎNREGISTRARE UTILIZATOR (Contul se creează cu is_approved = false)
-app.use('/api/register', async (req, res) => {
+app.post('/api/register', async (req, res) => {
   const { username, email, password, role } = req.body;
   try {
     const salt = await bcrypt.genSalt(10);
@@ -112,6 +119,7 @@ app.put('/api/admin/approve-user/:id', async (req, res) => {
     res.status(500).json({ error: 'Erore la aprobarea contului.' });
   }
 });
+
 // 5. PRELUARE TOATE TICHETELE
 app.get('/api/tickets', async (req, res) => {
   try {
@@ -179,22 +187,18 @@ app.post('/api/tickets/:id/logs', async (req, res) => {
   const { author, log_text, hours_spent, userRole } = req.body;
   
   try {
-    // 1. Verificăm dacă tichetul există
     const ticketResult = await pool.query('SELECT * FROM tickets WHERE id = $1', [id]);
     
     if (ticketResult.rows.length === 0) {
       return res.status(404).json({ error: 'Tichetul nu a fost găsit.' });
     }
     
-    // Declarăm variabila 'ticket' o singură dată
     const ticket = ticketResult.rows[0];
 
-    // 2. Permisiune: Doar Adminul sau persoana asignată pot adăuga log-uri tehnice
     if (userRole !== 'Admin' && ticket.assignee !== author) {
       return res.status(403).json({ error: 'Doar persoana asignată acestui tichet sau un Administrator poate adăuga jurnale tehnice.' });
     }
 
-    // 3. Inserăm log-ul
     const newLog = await pool.query(
       `INSERT INTO work_logs (ticket_id, author, log_text, hours_spent) VALUES ($1, $2, $3, $4) RETURNING *`,
       [id, author, log_text, hours_spent || '1h']
@@ -203,7 +207,7 @@ app.post('/api/tickets/:id/logs', async (req, res) => {
     res.status(201).json(newLog.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Eroare la adăugare log tehnic.' });
+    res.status(500).json({ error: 'Erore la adăugare log tehnic.' });
   }
 });
 
