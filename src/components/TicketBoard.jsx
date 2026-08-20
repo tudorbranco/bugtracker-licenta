@@ -10,6 +10,7 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
   const [severityFilter, setSeverityFilter] = useState('All');
+  const [departmentFilter, setDepartmentFilter] = useState('All'); // <--- Stare nouă pentru filtru departament
   const [statusFilter, setStatusFilter] = useState('All');
   const [onlyMyTasks, setOnlyMyTasks] = useState(false);
 
@@ -97,20 +98,20 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
     const matchesSearch = t.title.toLowerCase().includes(searchTerm.toLowerCase()) || (t.description && t.description.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesType = typeFilter === 'All' || t.ticket_type === typeFilter;
     const matchesSeverity = severityFilter === 'All' || t.severity === severityFilter;
+    const matchesDepartmentFilter = departmentFilter === 'All' || t.department === departmentFilter; // <--- Verificare filtru departament
     const matchesStatus = statusFilter === 'All' || t.status === statusFilter;
     const matchesMyTasks = !onlyMyTasks || t.assignee === currentUser;
     
-    // Filtrare pe departament / grup: Adminii și Product Ownerii vad tot, membrii vad doar tichetele din grupul lor (ex: Dev, QA)
     const isPrivileged = currentRole === 'Admin' || currentRole === 'ProductOwner';
     const matchesDepartment = isPrivileged || !t.department || t.department.toLowerCase() === currentUser.toLowerCase() || t.assignee === currentUser;
 
-    return matchesSearch && matchesType && matchesSeverity && matchesStatus && matchesMyTasks && matchesDepartment;
+    return matchesSearch && matchesType && matchesSeverity && matchesDepartmentFilter && matchesStatus && matchesMyTasks && matchesDepartment;
   });
 
   return (
     <div>
       {/* Bara de Filtre Avansate */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr auto', gap: '12px', marginBottom: '20px', background: '#fff', padding: '16px', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', alignItems: 'center' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr auto', gap: '12px', marginBottom: '20px', background: '#fff', padding: '16px', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', alignItems: 'center' }}>
         <input 
           type="text" 
           placeholder="🔍 Caută tichet..." 
@@ -139,6 +140,21 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
           <option value="Medium">Medium</option>
           <option value="Low">Low</option>
         </select>
+        
+        {/* Noul select pentru filtrarea după departament */}
+        <select 
+          value={departmentFilter} 
+          onChange={(e) => setDepartmentFilter(e.target.value)} 
+          style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', background: '#fff', outline: 'none' }}
+        >
+          <option value="All">Toate departamentele</option>
+          <option value="Dev">Dev</option>
+          <option value="QA">QA</option>
+          <option value="Frontend">Frontend</option>
+          <option value="Backend">Backend</option>
+          <option value="DevOps">DevOps</option>
+        </select>
+
         <select 
           value={statusFilter} 
           onChange={(e) => setStatusFilter(e.target.value)} 
