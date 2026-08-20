@@ -137,7 +137,7 @@ app.post('/api/tickets', async (req, res) => {
     const newTicket = await pool.query(
       `INSERT INTO tickets (title, description, ticket_type, severity, status, assignee, estimate, created_by) 
        VALUES ($1, $2, $3, $4, 'To Do', $5, $6, $7) RETURNING *`,
-      [title, description, ticket_type || 'Bug', severity || 'Medium', assignee || 'Neatribuit', estimate || '3h', created_by]
+      [title, description, ticket_type || 'Bug', severity || 'Medium', assignee || 'Neatribuit', estimate ? estimate : null, created_by]
     );
     res.status(201).json(newTicket.rows[0]);
   } catch (err) {
