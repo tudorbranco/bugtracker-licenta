@@ -11,9 +11,21 @@ function AdminPanel({ showToast }) {
       const res = await axios.get(`${API_URL}/admin/users`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      console.log("Date primite de la server:", res.data); // <--- Să vedem ce vine exact
       setUsers(res.data);
     } catch (err) {
-      console.error(err);
+      console.error("Eroare la preluarea utilizatorilor:", err.response?.data || err.message);
+      
+      // Fallback vechi, în caz că serverul cel nou nu e online încă
+      try {
+        const token = localStorage.getItem('token');
+        const resPending = await axios.get(`${API_URL}/admin/pending-users`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUsers(resPending.data);
+      } catch (e) {
+        console.error("Eroare și la fallback:", e);
+      }
     }
   };
 
@@ -49,8 +61,9 @@ function AdminPanel({ showToast }) {
     }
   };
 
-  const pendingUsers = users.filter(u => u.status === 0);
-  const activeUsers = users.filter(u => u.status === 1);
+  // Filtrare "Bulletproof" (acoperă și formatul vechi cu is_approved, și cel nou cu status)
+  const pendingUsers = users.filter(u => u.status === 0 || u.is_approved === false || u.is_approved === 'f');
+  const activeUsers = users.filter(u => u.status === 1 || u.is_approved === true || u.is_approved === 't');
   const inactiveUsers = users.filter(u => u.status === 2);
 
   return (
