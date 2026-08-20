@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { updateTicketStatus, assignTicket, deleteTicket } from '../services/api';
 import TechLogModal from './TechLogModal';
+import EditTicketModal from './EditTicketModal';
 
 function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }) {
   const statuses = ['To Do', 'In Progress', 'Code Review', 'Done'];
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const [editingTicket, setEditingTicket] = useState(null); // <--- Stare pentru editare tichet
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
   const [severityFilter, setSeverityFilter] = useState('All');
-  const [statusFilter, setStatusFilter] = useState('All'); // <--- Stare nouă pentru filtru status
+  const [statusFilter, setStatusFilter] = useState('All');
   const [onlyMyTasks, setOnlyMyTasks] = useState(false);
 
   const handleStatusChange = async (id, newStatus) => {
@@ -35,7 +37,6 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
     }
   };
 
-  // Logica pentru Drag and Drop
   const handleDragStart = (e, ticketId) => {
     e.dataTransfer.setData('text/plain', ticketId);
   };
@@ -92,12 +93,11 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
     );
   };
 
-  // Modificat pentru a include statusFilter
   const filteredTickets = tickets.filter(t => {
     const matchesSearch = t.title.toLowerCase().includes(searchTerm.toLowerCase()) || (t.description && t.description.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesType = typeFilter === 'All' || t.ticket_type === typeFilter;
     const matchesSeverity = severityFilter === 'All' || t.severity === severityFilter;
-    const matchesStatus = statusFilter === 'All' || t.status === statusFilter; // <--- Logica filtrului
+    const matchesStatus = statusFilter === 'All' || t.status === statusFilter;
     const matchesMyTasks = !onlyMyTasks || t.assignee === currentUser;
     
     return matchesSearch && matchesType && matchesSeverity && matchesStatus && matchesMyTasks;
@@ -135,8 +135,6 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
           <option value="Medium">Medium</option>
           <option value="Low">Low</option>
         </select>
-        
-        {/* Noul select pentru filtru status */}
         <select 
           value={statusFilter} 
           onChange={(e) => setStatusFilter(e.target.value)} 
@@ -148,7 +146,6 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
           <option value="Code Review">Code Review</option>
           <option value="Done">Done</option>
         </select>
-
         <button 
           onClick={() => setOnlyMyTasks(!onlyMyTasks)}
           style={{ padding: '8px 14px', borderRadius: '6px', border: 'none', background: onlyMyTasks ? '#2563eb' : '#e2e8f0', color: onlyMyTasks ? '#fff' : '#334155', fontWeight: '600', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap' }}
@@ -160,7 +157,6 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
       {/* Coloanele Kanban cu Drag & Drop */}
       <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '10px' }}>
         {statuses.map((status) => {
-          // Filtrăm coloanele ca să nu mai afișăm coloana dacă s-a selectat o stare anume
           if (statusFilter !== 'All' && status !== statusFilter) return null;
 
           const colTickets = filteredTickets.filter((t) => t.status === status);
@@ -200,11 +196,10 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
 
                     <div style={{ fontSize: '11px', color: '#64748b', background: '#f8fafc', padding: '6px', borderRadius: '4px', marginBottom: '10px' }}>
                       <div>👤 <strong>{t.assignee}</strong></div>
-                      <div>⏱️ Est: {t.estimate}</div>
+                      <div>⏱️ Est: {t.estimate || 'Nespecificat'}</div>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      {/* Butoane rapide cu săgeți */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px' }}>
                         <button 
                           onClick={() => handlePrevStatus(t)} 
@@ -225,7 +220,7 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
                         </button>
                       </div>
 
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px', gap: '4px', flexWrap: 'wrap' }}>
                         <button onClick={() => handleSelfAssign(t.id)} style={{ background: '#0ea5e9', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
                           Preia
                         </button>
@@ -233,9 +228,14 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
                           Dev Log
                         </button>
                         {(currentRole === 'Admin' || currentRole === 'ProductOwner') && (
-                          <button onClick={() => handleDelete(t.id)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
-                            Șterge
-                          </button>
+                          <>
+                            <button onClick={() => setEditingTicket(t)} style={{ background: '#f59e0b', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
+                              Editează
+                            </button>
+                            <button onClick={() => handleDelete(t.id)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
+                              Șterge
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -249,6 +249,10 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
 
       {selectedTicket && (
         <TechLogModal ticket={selectedTicket} currentUser={currentUser} currentRole={currentRole} showToast={showToast} onClose={() => setSelectedTicket(null)} />
+      )}
+
+      {editingTicket && (
+        <EditTicketModal ticket={editingTicket} onClose={() => setEditingTicket(null)} onRefresh={onRefresh} showToast={showToast} />
       )}
     </div>
   );

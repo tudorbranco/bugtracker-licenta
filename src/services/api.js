@@ -30,3 +30,8 @@ export const assignTicket = (id, assignee) => API.put(`/tickets/${id}/assign`, {
 export const deleteTicket = (id) => API.delete(`/tickets/${id}`);
 export const getTicketLogs = (id) => API.get(`/tickets/${id}/logs`);
 export const addTicketLog = (id, logData) => API.post(`/tickets/${id}/logs`, logData);
+export const updateTicket = async (id, ticketData) => {
+  return await axios.put(`${API_URL}/tickets/${id}`, ticketData, {
+    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+  });
+};

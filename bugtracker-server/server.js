@@ -221,6 +221,26 @@ app.delete('/api/tickets/:id', async (req, res) => {
     res.status(500).json({ error: 'Erore la ștergere.' });
   }
 });
+// 12. ACTUALIZARE TICHET (Editare completă)
+app.put('/api/tickets/:id', async (req, res) => {
+  const { id } = req.params;
+  const { title, description, ticket_type, severity, assignee, estimate } = req.body;
+  try {
+    const updated = await pool.query(
+      `UPDATE tickets 
+       SET title = $1, description = $2, ticket_type = $3, severity = $4, assignee = $5, estimate = $6 
+       WHERE id = $7 RETURNING *`,
+      [title, description, ticket_type, severity, assignee || 'Neatribuit', estimate ? estimate : null, id]
+    );
+    if (updated.rows.length === 0) {
+      return res.status(404).json({ error: 'Tichetul nu a fost găsit.' });
+    }
+    res.json(updated.rows[0]);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: 'Erore la actualizarea tichetului.' });
+  }
+});
 
 // Pornire server
 const PORT = process.env.PORT || 5000;
