@@ -14,15 +14,6 @@ function AdminPanel({ showToast }) {
       setUsers(res.data);
     } catch (err) {
       console.error(err);
-      try {
-        const token = localStorage.getItem('token');
-        const resPending = await axios.get(`${API_URL}/admin/pending-users`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setUsers(resPending.data);
-      } catch (e) {
-        console.error(e);
-      }
     }
   };
 
@@ -30,13 +21,13 @@ function AdminPanel({ showToast }) {
     fetchUsers();
   }, []);
 
-  const handleUpdateStatus = async (id, status) => {
+  const handleSetStatus = async (id, status) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`${API_URL}/admin/approve-user/${id}`, { is_approved: status }, {
+      await axios.put(`${API_URL}/admin/user-status/${id}`, { status }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      showToast(status ? 'Utilizator activat cu succes!' : 'Utilizator dezactivat / refuzat.', 'success');
+      showToast('Status actualizat cu succes!', 'success');
       fetchUsers();
     } catch (err) {
       showToast('Eroare la actualizarea statusului.', 'error');
@@ -58,15 +49,14 @@ function AdminPanel({ showToast }) {
     }
   };
 
-  // Filtrare clară
-  const pendingUsers = users.filter(u => u.is_approved === false || u.is_approved === null || u.is_approved === 0);
-  const activeOrInactiveUsers = users.filter(u => u.is_approved === true || u.is_approved === false);
+  const pendingUsers = users.filter(u => u.status === 0);
+  const activeUsers = users.filter(u => u.status === 1);
+  const inactiveUsers = users.filter(u => u.status === 2);
 
   return (
     <div style={{ background: '#fff', padding: '24px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
       <h3 style={{ marginTop: 0, color: '#0f172a', marginBottom: '20px' }}>Panou Administrare Echipă</h3>
 
-      {/* Secțiunea 1: Cereri În Așteptare */}
       <div style={{ marginBottom: '30px' }}>
         <h4 style={{ color: '#334155', borderBottom: '2px solid #e2e8f0', paddingBottom: '8px' }}>
           ⏳ Cereri În Așteptare ({pendingUsers.length})
@@ -82,18 +72,8 @@ function AdminPanel({ showToast }) {
                   <div style={{ fontSize: '12px', color: '#2563eb', fontWeight: '500' }}>Rol: {u.role}</div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button 
-                    onClick={() => handleUpdateStatus(u.id, true)}
-                    style={{ background: '#10b981', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}
-                  >
-                    Acceptă
-                  </button>
-                  <button 
-                    onClick={() => handleDeleteUser(u.id)}
-                    style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}
-                  >
-                    Refuză
-                  </button>
+                  <button onClick={() => handleSetStatus(u.id, 1)} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Acceptă</button>
+                  <button onClick={() => handleSetStatus(u.id, 2)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Refuză</button>
                 </div>
               </div>
             ))}
@@ -101,45 +81,47 @@ function AdminPanel({ showToast }) {
         )}
       </div>
 
-      {/* Secțiunea 2: Membri (Activi & Inactivi) */}
-      <div>
+      <div style={{ marginBottom: '30px' }}>
         <h4 style={{ color: '#334155', borderBottom: '2px solid #e2e8f0', paddingBottom: '8px' }}>
-          👥 Gestionare Membri Înregistrați ({users.length})
+          👥 Membri Activi ({activeUsers.length})
         </h4>
-        {users.length === 0 ? (
-          <p style={{ color: '#94a3b8', fontSize: '13px' }}>Nu există utilizatori înregistrați.</p>
+        {activeUsers.length === 0 ? (
+          <p style={{ color: '#94a3b8', fontSize: '13px' }}>Nu există membri activi.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
-            {users.map(u => (
-              <div key={u.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: u.is_approved ? '#f8fafc' : '#fef2f2', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            {activeUsers.map(u => (
+              <div key={u.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <div>
                   <div style={{ fontWeight: '600', color: '#0f172a' }}>{u.username} <span style={{ fontSize: '12px', color: '#64748b' }}>({u.email})</span></div>
-                  <div style={{ fontSize: '12px', color: u.is_approved ? '#059669' : '#dc2626', fontWeight: '500' }}>
-                    Rol: {u.role} | Status: {u.is_approved ? '🟢 Activ' : '🔴 Inactiv / Refuzat'}
-                  </div>
+                  <div style={{ fontSize: '12px', color: '#059669', fontWeight: '500' }}>Rol: {u.role} | 🟢 Activ</div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  {u.is_approved ? (
-                    <button 
-                      onClick={() => handleUpdateStatus(u.id, false)}
-                      style={{ background: '#f59e0b', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}
-                    >
-                      Dezactivează
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={() => handleUpdateStatus(u.id, true)}
-                      style={{ background: '#10b981', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}
-                    >
-                      Activează
-                    </button>
-                  )}
-                  <button 
-                    onClick={() => handleDeleteUser(u.id)}
-                    style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}
-                  >
-                    Șterge
-                  </button>
+                  <button onClick={() => handleSetStatus(u.id, 2)} style={{ background: '#f59e0b', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Dezactivează</button>
+                  <button onClick={() => handleDeleteUser(u.id)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Șterge</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <h4 style={{ color: '#334155', borderBottom: '2px solid #e2e8f0', paddingBottom: '8px' }}>
+          🚫 Membri Inactivi / Refuzați ({inactiveUsers.length})
+        </h4>
+        {inactiveUsers.length === 0 ? (
+          <p style={{ color: '#94a3b8', fontSize: '13px' }}>Nu există membri refuzați sau dezactivați.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+            {inactiveUsers.map(u => (
+              <div key={u.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fef2f2', padding: '12px', borderRadius: '8px', border: '1px solid #fecaca' }}>
+                <div>
+                  <div style={{ fontWeight: '600', color: '#0f172a' }}>{u.username} <span style={{ fontSize: '12px', color: '#64748b' }}>({u.email})</span></div>
+                  <div style={{ fontSize: '12px', color: '#dc2626', fontWeight: '500' }}>Rol: {u.role} | 🔴 Inactiv / Refuzat</div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={() => handleSetStatus(u.id, 1)} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Reactivează</button>
+                  <button onClick={() => handleDeleteUser(u.id)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Șterge</button>
                 </div>
               </div>
             ))}

@@ -10,7 +10,6 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Conexiunea la baza de date PostgreSQL (Suportă atât DATABASE_URL în cloud, cât și variabilele locale)
 const pool = new Pool(
   process.env.DATABASE_URL
     ? {
@@ -26,7 +25,6 @@ const pool = new Pool(
       }
 );
 
-// Configurare Nodemailer pentru trimiterea email-urilor de notificare către admin
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -35,7 +33,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// 1. ÎNREGISTRARE UTILIZATOR (Contul se creează cu is_approved = false)
 app.post('/api/register', async (req, res) => {
   const { username, email, password, role } = req.body;
   try {
@@ -43,15 +40,14 @@ app.post('/api/register', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, salt);
 
     const newUser = await pool.query(
-      `INSERT INTO users (username, email, password_hash, role, is_approved) 
-       VALUES ($1, $2, $3, $4, FALSE) RETURNING id, username, email, role, is_approved`,
+      `INSERT INTO users (username, email, password_hash, role, status) 
+       VALUES ($1, $2, $3, $4, 0) RETURNING id, username, email, role, status`,
       [username, email, passwordHash, role || 'Developer']
     );
 
-    // Trimitere email de alertă către Administrator
     const mailOptions = {
       from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_USER, // Se trimite la admin
+      to: process.env.EMAIL_USER,
       subject: `Cerere nouă cont BugTracker: ${username}`,
       text: `Utilizatorul ${username} (${email}) s-a înregistrat cu rolul de ${role || 'Developer'}. Intră în baza de date sau panoul de admin pentru a-i aproba contul.`
     };
@@ -70,7 +66,6 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// 2. LOGIN UTILIZATOR (Verifică dacă este aprobat)
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -81,8 +76,12 @@ app.post('/api/login', async (req, res) => {
 
     const user = userResult.rows[0];
 
-    if (!user.is_approved) {
-      return res.status(403).json({ error: 'Contul tău nu a fost încă aprobat de către administrator.' });
+    if (user.status === 0) {
+      return res.status(403).json({ error: 'Contul tău este în așteptarea aprobării de către administrator.' });
+    }
+    
+    if (user.status === 2) {
+      return res.status(403).json({ error: 'Acest cont a fost refuzat sau dezactivat.' });
     }
 
     const validPassword = await bcrypt.compare(password, user.password_hash);
@@ -99,29 +98,26 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// 3. LISTARE TOȚI UTILIZATORII (Pentru Panoul de Admin)
 app.get('/api/admin/users', async (req, res) => {
   try {
-    const users = await pool.query('SELECT id, username, email, role, is_approved, created_at FROM users ORDER BY id DESC');
+    const users = await pool.query('SELECT id, username, email, role, status, created_at FROM users ORDER BY id DESC');
     res.json(users.rows);
   } catch (err) {
     res.status(500).json({ error: 'Erore la preluarea utilizatorilor.' });
   }
 });
 
-// 4. APROBARE / DEZACTIVARE UTILIZATOR (is_approved devine true sau false)
-app.put('/api/admin/approve-user/:id', async (req, res) => {
+app.put('/api/admin/user-status/:id', async (req, res) => {
   const { id } = req.params;
-  const { is_approved } = req.body;
+  const { status } = req.body;
   try {
-    await pool.query('UPDATE users SET is_approved = $1 WHERE id = $2', [is_approved, id]);
+    await pool.query('UPDATE users SET status = $1 WHERE id = $2', [status, id]);
     res.json({ message: 'Statusul utilizatorului a fost actualizat!' });
   } catch (err) {
     res.status(500).json({ error: 'Erore la actualizarea contului.' });
   }
 });
 
-// 4.1 ȘTERGERE DEFINITIVĂ UTILIZATOR
 app.delete('/api/admin/user/:id', async (req, res) => {
   const { id } = req.params;
   try {
@@ -132,7 +128,6 @@ app.delete('/api/admin/user/:id', async (req, res) => {
   }
 });
 
-// 5. PRELUARE TOATE TICHETELE
 app.get('/api/tickets', async (req, res) => {
   try {
     const tickets = await pool.query('SELECT * FROM tickets ORDER BY id DESC');
@@ -142,13 +137,12 @@ app.get('/api/tickets', async (req, res) => {
   }
 });
 
-// 6. CREARE TICHET NOU
 app.post('/api/tickets', async (req, res) => {
   const { title, description, ticket_type, severity, assignee, estimate, department, created_by } = req.body;
   try {
     const newTicket = await pool.query(
       `INSERT INTO tickets (title, description, ticket_type, severity, status, assignee, estimate, department, created_by) 
-       VALUES ($1, $2, $3, $4, 'To Do', $5, $6, $7, $8, $9) RETURNING *`,
+       VALUES ($1, $2, $3, $4, 'To Do', $5, $6, $7, $8) RETURNING *`,
       [title, description, ticket_type || 'Bug', severity || 'Medium', assignee || 'Neatribuit', estimate ? estimate : null, department || 'Dev', created_by]
     );
     res.status(201).json(newTicket.rows[0]);
@@ -158,7 +152,6 @@ app.post('/api/tickets', async (req, res) => {
   }
 });
 
-// 7. ACTUALIZARE STATUS TICHET (Drag & Drop / Change Status)
 app.put('/api/tickets/:id/status', async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
@@ -170,7 +163,6 @@ app.put('/api/tickets/:id/status', async (req, res) => {
   }
 });
 
-// 8. ATRIBUIRE TICHET (Self-Assign)
 app.put('/api/tickets/:id/assign', async (req, res) => {
   const { id } = req.params;
   const { assignee } = req.body;
@@ -182,7 +174,6 @@ app.put('/api/tickets/:id/assign', async (req, res) => {
   }
 });
 
-// 9. PRELUARE JURNALE TEHNICE PENTRU UN TICHET
 app.get('/api/tickets/:id/logs', async (req, res) => {
   const { id } = req.params;
   try {
@@ -193,7 +184,6 @@ app.get('/api/tickets/:id/logs', async (req, res) => {
   }
 });
 
-// 10. ADAUGARE JURNAL TEHNIC
 app.post('/api/tickets/:id/logs', async (req, res) => {
   const { id } = req.params;
   const { author, log_text, hours_spent, userRole } = req.body;
@@ -223,7 +213,6 @@ app.post('/api/tickets/:id/logs', async (req, res) => {
   }
 });
 
-// 11. ȘTERGERE TICHET
 app.delete('/api/tickets/:id', async (req, res) => {
   const { id } = req.params;
   try {
@@ -234,7 +223,6 @@ app.delete('/api/tickets/:id', async (req, res) => {
   }
 });
 
-// 12. ACTUALIZARE TICHET (Editare completă)
 app.put('/api/tickets/:id', async (req, res) => {
   const { id } = req.params;
   const { title, description, ticket_type, severity, assignee, estimate, department } = req.body;
@@ -255,7 +243,6 @@ app.put('/api/tickets/:id', async (req, res) => {
   }
 });
 
-// Pornire server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Serverul rulează pe portul ${PORT}`);
