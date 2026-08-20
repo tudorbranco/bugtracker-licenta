@@ -53,7 +53,7 @@ app.post('/api/register', async (req, res) => {
     };
 
     transporter.sendMail(mailOptions, (err) => {
-      if (err) console.log('Erore trimitere email:', err);
+      if (err) console.log('Eroare trimitere email:', err);
     });
 
     res.status(201).json({ 
@@ -62,7 +62,7 @@ app.post('/api/register', async (req, res) => {
     });
   } catch (err) {
     console.error(err.message);
-    res.status(500).json({ error: 'Erore la înregistrare (utilizatorul sau emailul poate exista deja).' });
+    res.status(500).json({ error: 'Eroare la înregistrare (utilizatorul sau emailul poate exista deja).' });
   }
 });
 
@@ -94,7 +94,7 @@ app.post('/api/login', async (req, res) => {
     res.json({ token, user: { id: user.id, username: user.username, email: user.email, role: user.role } });
   } catch (err) {
     console.error(err.message);
-    res.status(500).json({ error: 'Erore de server la autentificare.' });
+    res.status(500).json({ error: 'Eroare de server la autentificare.' });
   }
 });
 
@@ -103,7 +103,7 @@ app.get('/api/admin/users', async (req, res) => {
     const users = await pool.query('SELECT id, username, email, role, status, created_at FROM users ORDER BY id DESC');
     res.json(users.rows);
   } catch (err) {
-    res.status(500).json({ error: 'Erore la preluarea utilizatorilor.' });
+    res.status(500).json({ error: 'Eroare la preluarea utilizatorilor.' });
   }
 });
 
@@ -127,7 +127,7 @@ app.put('/api/admin/user-status/:id', async (req, res) => {
     res.json({ message: 'Statusul utilizatorului a fost actualizat!' });
   } catch (err) {
     console.error(err.message);
-    res.status(500).json({ error: 'Erore la actualizarea contului.' });
+    res.status(500).json({ error: 'Eroare la actualizarea contului.' });
   }
 });
 
@@ -148,7 +148,7 @@ app.delete('/api/admin/user/:id', async (req, res) => {
     res.json({ message: 'Utilizator șters cu succes!' });
   } catch (err) {
     console.error(err.message);
-    res.status(500).json({ error: 'Erore la ștergerea utilizatorului.' });
+    res.status(500).json({ error: 'Eroare la ștergerea utilizatorului.' });
   }
 });
 
@@ -157,7 +157,7 @@ app.get('/api/tickets', async (req, res) => {
     const tickets = await pool.query('SELECT * FROM tickets ORDER BY id DESC');
     res.json(tickets.rows);
   } catch (err) {
-    res.status(500).json({ error: 'Erore la preluarea tichetelor.' });
+    res.status(500).json({ error: 'Eroare la preluarea tichetelor.' });
   }
 });
 
@@ -172,7 +172,7 @@ app.post('/api/tickets', async (req, res) => {
     res.status(201).json(newTicket.rows[0]);
   } catch (err) {
     console.error(err.message);
-    res.status(500).json({ error: 'Erore la creare tichet.' });
+    res.status(500).json({ error: 'Eroare la creare tichet.' });
   }
 });
 
@@ -183,7 +183,7 @@ app.put('/api/tickets/:id/status', async (req, res) => {
     const updated = await pool.query('UPDATE tickets SET status = $1 WHERE id = $2 RETURNING *', [status, id]);
     res.json(updated.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: 'Erore la actualizare status.' });
+    res.status(500).json({ error: 'Eroare la actualizare status.' });
   }
 });
 
@@ -194,7 +194,7 @@ app.put('/api/tickets/:id/assign', async (req, res) => {
     const updated = await pool.query('UPDATE tickets SET assignee = $1 WHERE id = $2 RETURNING *', [assignee, id]);
     res.json(updated.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: 'Erore la atribuire tichet.' });
+    res.status(500).json({ error: 'Eroare la atribuire tichet.' });
   }
 });
 
@@ -204,7 +204,7 @@ app.get('/api/tickets/:id/logs', async (req, res) => {
     const logs = await pool.query('SELECT * FROM work_logs WHERE ticket_id = $1 ORDER BY id DESC', [id]);
     res.json(logs.rows);
   } catch (err) {
-    res.status(500).json({ error: 'Erore la preluarea log-urilor.' });
+    res.status(500).json({ error: 'Eroare la preluarea log-urilor.' });
   }
 });
 
@@ -233,7 +233,7 @@ app.post('/api/tickets/:id/logs', async (req, res) => {
     res.status(201).json(newLog.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Erore la adăugare log tehnic.' });
+    res.status(500).json({ error: 'Eroare la adăugare log tehnic.' });
   }
 });
 
@@ -243,7 +243,7 @@ app.delete('/api/tickets/:id', async (req, res) => {
     await pool.query('DELETE FROM tickets WHERE id = $1', [id]);
     res.json({ message: 'Tichet șters cu succes.' });
   } catch (err) {
-    res.status(500).json({ error: 'Erore la ștergere.' });
+    res.status(500).json({ error: 'Eroare la ștergere.' });
   }
 });
 
@@ -263,7 +263,7 @@ app.put('/api/tickets/:id', async (req, res) => {
     res.json(updated.rows[0]);
   } catch (err) {
     console.error(err.message);
-    res.status(500).json({ error: 'Erore la actualizarea tichetului.' });
+    res.status(500).json({ error: 'Eroare la actualizarea tichetului.' });
   }
 });
 
