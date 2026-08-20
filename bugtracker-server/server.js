@@ -1,3 +1,5 @@
+// server.js (Înlocuiește complet rutele de update status și delete user)
+
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -110,24 +112,16 @@ app.get('/api/admin/users', async (req, res) => {
 app.put('/api/admin/user-status/:id', async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
+  
   try {
-    // Dacă statusul trimis indică dezactivarea (status === 2), verificăm dacă are tichete active asignate
     if (status === 2) {
       const userRes = await pool.query('SELECT username FROM users WHERE id = $1', [id]);
-      if (userRes.rows.length === 0) {
-        return res.status(404).json({ error: 'Utilizatorul nu a fost găsit.' });
-      }
-      const username = userRes.rows[0].username;
-
-      const activeTickets = await pool.query(
-        `SELECT COUNT(*) FROM tickets WHERE assignee = $1 AND status != 'Done'`,
-        [username]
-      );
-
-      if (parseInt(activeTickets.rows[0].count, 10) > 0) {
-        return res.status(400).json({ 
-          error: 'Utilizatorul nu poate fi dezactivat deoarece are tichete active asignate (stare diferită de Done).' 
-        });
+      if (userRes.rows.length > 0) {
+        const username = userRes.rows[0].username;
+        const ticketsRes = await pool.query('SELECT count(*) FROM tickets WHERE assignee = $1', [username]);
+        if (parseInt(ticketsRes.rows[0].count) > 0) {
+          return res.status(400).json({ error: 'Nu poți dezactiva un utilizator cu tichete asignate. Reasignează-le mai întâi!' });
+        }
       }
     }
 
@@ -141,10 +135,21 @@ app.put('/api/admin/user-status/:id', async (req, res) => {
 
 app.delete('/api/admin/user/:id', async (req, res) => {
   const { id } = req.params;
+  
   try {
+    const userRes = await pool.query('SELECT username FROM users WHERE id = $1', [id]);
+    if (userRes.rows.length > 0) {
+      const username = userRes.rows[0].username;
+      const ticketsRes = await pool.query('SELECT count(*) FROM tickets WHERE assignee = $1', [username]);
+      if (parseInt(ticketsRes.rows[0].count) > 0) {
+        return res.status(400).json({ error: 'Nu poți șterge un utilizator cu tichete asignate. Reasignează-le mai întâi!' });
+      }
+    }
+
     await pool.query('DELETE FROM users WHERE id = $1', [id]);
     res.json({ message: 'Utilizator șters cu succes!' });
   } catch (err) {
+    console.error(err.message);
     res.status(500).json({ error: 'Erore la ștergerea utilizatorului.' });
   }
 });

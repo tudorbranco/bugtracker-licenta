@@ -1,3 +1,5 @@
+// src/components/AdminPanel.jsx
+
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -11,21 +13,9 @@ function AdminPanel({ showToast }) {
       const res = await axios.get(`${API_URL}/admin/users`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      console.log("Date primite de la server:", res.data); // <--- Să vedem ce vine exact
       setUsers(res.data);
     } catch (err) {
-      console.error("Eroare la preluarea utilizatorilor:", err.response?.data || err.message);
-      
-      // Fallback vechi, în caz că serverul cel nou nu e online încă
-      try {
-        const token = localStorage.getItem('token');
-        const resPending = await axios.get(`${API_URL}/admin/pending-users`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setUsers(resPending.data);
-      } catch (e) {
-        console.error("Eroare și la fallback:", e);
-      }
+      console.error(err);
     }
   };
 
@@ -42,12 +32,7 @@ function AdminPanel({ showToast }) {
       showToast('Status actualizat cu succes!', 'success');
       fetchUsers();
     } catch (err) {
-      // AICI ESTE MODIFICAREA: Prindem eroarea specifică de la server (ex: are tichete active)
-      if (err.response && err.response.data && err.response.data.error) {
-        showToast(err.response.data.error, 'error');
-      } else {
-        showToast('Eroare la actualizarea statusului.', 'error');
-      }
+      showToast(err.response?.data?.error || 'Eroare la actualizarea statusului.', 'error');
     }
   };
 
@@ -61,14 +46,13 @@ function AdminPanel({ showToast }) {
         showToast('Utilizator șters definitiv.', 'info');
         fetchUsers();
       } catch (err) {
-        showToast('Eroare la ștergerea utilizatorului.', 'error');
+        showToast(err.response?.data?.error || 'Eroare la ștergerea utilizatorului.', 'error');
       }
     }
   };
 
-  // Filtrare "Bulletproof" (acoperă și formatul vechi cu is_approved, și cel nou cu status)
-  const pendingUsers = users.filter(u => u.status === 0 || u.is_approved === false || u.is_approved === 'f');
-  const activeUsers = users.filter(u => u.status === 1 || u.is_approved === true || u.is_approved === 't');
+  const pendingUsers = users.filter(u => u.status === 0);
+  const activeUsers = users.filter(u => u.status === 1);
   const inactiveUsers = users.filter(u => u.status === 2);
 
   return (
