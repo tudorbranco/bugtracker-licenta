@@ -42,7 +42,12 @@ function AdminPanel({ showToast }) {
       showToast('Status actualizat cu succes!', 'success');
       fetchUsers();
     } catch (err) {
-      showToast('Eroare la actualizarea statusului.', 'error');
+      // AICI ESTE MODIFICAREA: Prindem eroarea specifică de la server (ex: are tichete active)
+      if (err.response && err.response.data && err.response.data.error) {
+        showToast(err.response.data.error, 'error');
+      } else {
+        showToast('Eroare la actualizarea statusului.', 'error');
+      }
     }
   };
 

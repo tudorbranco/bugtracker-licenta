@@ -111,9 +111,30 @@ app.put('/api/admin/user-status/:id', async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
   try {
+    // Dacă statusul trimis indică dezactivarea (status === 2), verificăm dacă are tichete active asignate
+    if (status === 2) {
+      const userRes = await pool.query('SELECT username FROM users WHERE id = $1', [id]);
+      if (userRes.rows.length === 0) {
+        return res.status(404).json({ error: 'Utilizatorul nu a fost găsit.' });
+      }
+      const username = userRes.rows[0].username;
+
+      const activeTickets = await pool.query(
+        `SELECT COUNT(*) FROM tickets WHERE assignee = $1 AND status != 'Done'`,
+        [username]
+      );
+
+      if (parseInt(activeTickets.rows[0].count, 10) > 0) {
+        return res.status(400).json({ 
+          error: 'Utilizatorul nu poate fi dezactivat deoarece are tichete active asignate (stare diferită de Done).' 
+        });
+      }
+    }
+
     await pool.query('UPDATE users SET status = $1 WHERE id = $2', [status, id]);
     res.json({ message: 'Statusul utilizatorului a fost actualizat!' });
   } catch (err) {
+    console.error(err.message);
     res.status(500).json({ error: 'Erore la actualizarea contului.' });
   }
 });
