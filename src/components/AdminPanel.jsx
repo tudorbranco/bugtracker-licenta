@@ -8,14 +8,12 @@ function AdminPanel({ showToast }) {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      // Folosim ruta generală sau adăugăm fallback pe pending-users dacă rutele noi nu au primit deploy încă
       const res = await axios.get(`${API_URL}/admin/users`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUsers(res.data);
     } catch (err) {
       console.error(err);
-      // Fallback în caz că ruta /admin/users nu e activă pe server
       try {
         const token = localStorage.getItem('token');
         const resPending = await axios.get(`${API_URL}/admin/pending-users`, {
@@ -60,8 +58,9 @@ function AdminPanel({ showToast }) {
     }
   };
 
-  const pendingUsers = users.filter(u => u.is_approved === false || u.is_approved === null);
-  const activeUsers = users.filter(u => u.is_approved === true);
+  // Filtrare clară
+  const pendingUsers = users.filter(u => u.is_approved === false || u.is_approved === null || u.is_approved === 0);
+  const activeOrInactiveUsers = users.filter(u => u.is_approved === true || u.is_approved === false);
 
   return (
     <div style={{ background: '#fff', padding: '24px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
@@ -102,10 +101,10 @@ function AdminPanel({ showToast }) {
         )}
       </div>
 
-      {/* Secțiunea 2: Membri Activi & Posibilitatea de Dezactivare */}
+      {/* Secțiunea 2: Membri (Activi & Inactivi) */}
       <div>
         <h4 style={{ color: '#334155', borderBottom: '2px solid #e2e8f0', paddingBottom: '8px' }}>
-          👥 Membri Activi & Inactivi ({users.length})
+          👥 Gestionare Membri Înregistrați ({users.length})
         </h4>
         {users.length === 0 ? (
           <p style={{ color: '#94a3b8', fontSize: '13px' }}>Nu există utilizatori înregistrați.</p>
