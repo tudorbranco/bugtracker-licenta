@@ -109,7 +109,7 @@ app.get('/api/admin/users', async (req, res) => {
   }
 });
 
-// 4. APROBARE / REVOCARE ACCES UTILIZATOR
+// 4. APROBARE / DEZACTIVARE UTILIZATOR (is_approved devine true sau false)
 app.put('/api/admin/approve-user/:id', async (req, res) => {
   const { id } = req.params;
   const { is_approved } = req.body;
@@ -121,12 +121,12 @@ app.put('/api/admin/approve-user/:id', async (req, res) => {
   }
 });
 
-// 4.1 ȘTERGERE / REFUZ DEFINITIV UTILIZATOR
+// 4.1 ȘTERGERE DEFINITIVĂ UTILIZATOR
 app.delete('/api/admin/user/:id', async (req, res) => {
   const { id } = req.params;
   try {
     await pool.query('DELETE FROM users WHERE id = $1', [id]);
-    res.json({ message: 'Utilizator șters/refuzat cu succes!' });
+    res.json({ message: 'Utilizator șters cu succes!' });
   } catch (err) {
     res.status(500).json({ error: 'Erore la ștergerea utilizatorului.' });
   }
@@ -142,13 +142,13 @@ app.get('/api/tickets', async (req, res) => {
   }
 });
 
-// 6. CREARE TICHET NOU (Actualizat cu câmpul department)
+// 6. CREARE TICHET NOU
 app.post('/api/tickets', async (req, res) => {
   const { title, description, ticket_type, severity, assignee, estimate, department, created_by } = req.body;
   try {
     const newTicket = await pool.query(
       `INSERT INTO tickets (title, description, ticket_type, severity, status, assignee, estimate, department, created_by) 
-       VALUES ($1, $2, $3, $4, 'To Do', $5, $6, $7, $8) RETURNING *`,
+       VALUES ($1, $2, $3, $4, 'To Do', $5, $6, $7, $8, $9) RETURNING *`,
       [title, description, ticket_type || 'Bug', severity || 'Medium', assignee || 'Neatribuit', estimate ? estimate : null, department || 'Dev', created_by]
     );
     res.status(201).json(newTicket.rows[0]);
@@ -193,7 +193,7 @@ app.get('/api/tickets/:id/logs', async (req, res) => {
   }
 });
 
-// 10. ADAUGARE JURNAL TEHNIC (Cu verificare de permisiuni)
+// 10. ADAUGARE JURNAL TEHNIC
 app.post('/api/tickets/:id/logs', async (req, res) => {
   const { id } = req.params;
   const { author, log_text, hours_spent, userRole } = req.body;
@@ -234,7 +234,7 @@ app.delete('/api/tickets/:id', async (req, res) => {
   }
 });
 
-// 12. ACTUALIZARE TICHET (Editare completă - Actualizat cu department)
+// 12. ACTUALIZARE TICHET (Editare completă)
 app.put('/api/tickets/:id', async (req, res) => {
   const { id } = req.params;
   const { title, description, ticket_type, severity, assignee, estimate, department } = req.body;
