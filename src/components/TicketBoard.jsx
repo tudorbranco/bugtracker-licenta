@@ -20,6 +20,40 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
     }
   };
 
+  const handleNextStatus = (ticket) => {
+    const currentIndex = statuses.indexOf(ticket.status);
+    if (currentIndex < statuses.length - 1 && currentIndex !== -1) {
+      handleStatusChange(ticket.id, statuses[currentIndex + 1]);
+    }
+  };
+
+  const handlePrevStatus = (ticket) => {
+    const currentIndex = statuses.indexOf(ticket.status);
+    if (currentIndex > 0) {
+      handleStatusChange(ticket.id, statuses[currentIndex - 1]);
+    }
+  };
+
+  // Logica pentru Drag and Drop
+  const handleDragStart = (e, ticketId) => {
+    e.dataTransfer.setData('text/plain', ticketId);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault(); // Necesar pentru a permite plasarea (drop)
+  };
+
+  const handleDrop = (e, targetStatus) => {
+    e.preventDefault();
+    const ticketId = e.dataTransfer.getData('text/plain');
+    if (ticketId) {
+      const ticket = tickets.find(t => t.id.toString() === ticketId.toString());
+      if (ticket && ticket.status !== targetStatus) {
+        handleStatusChange(ticket.id, targetStatus);
+      }
+    }
+  };
+
   const handleSelfAssign = async (id) => {
     try {
       await assignTicket(id, currentUser);
@@ -105,12 +139,17 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
         </button>
       </div>
 
-      {/* Coloanele Kanban */}
+      {/* Coloanele Kanban cu Drag & Drop */}
       <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '10px' }}>
         {statuses.map((status) => {
           const colTickets = filteredTickets.filter((t) => t.status === status);
           return (
-            <div key={status} style={{ flex: 1, minWidth: '280px', background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0', minHeight: '450px' }}>
+            <div 
+              key={status} 
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, status)}
+              style={{ flex: 1, minWidth: '280px', background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0', minHeight: '450px' }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '2px solid #e2e8f0', paddingBottom: '8px' }}>
                 <h4 style={{ margin: 0, color: '#334155', fontSize: '15px' }}>{status}</h4>
                 <span style={{ background: '#e2e8f0', color: '#475569', fontSize: '12px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '12px' }}>
@@ -119,10 +158,15 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
               </div>
 
               {colTickets.length === 0 ? (
-                <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', marginTop: '40px' }}>Niciun tichet găsit</div>
+                <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', marginTop: '40px' }}>Trage tichetele aici sau folosește săgețile</div>
               ) : (
                 colTickets.map((t) => (
-                  <div key={t.id} style={{ background: '#fff', padding: '14px', marginBottom: '12px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0' }}>
+                  <div 
+                    key={t.id} 
+                    draggable 
+                    onDragStart={(e) => handleDragStart(e, t.id)}
+                    style={{ background: '#fff', padding: '14px', marginBottom: '12px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0', cursor: 'grab' }}
+                  >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
                       <span style={{ fontSize: '11px', fontWeight: '600', color: '#2563eb', background: '#eff6ff', padding: '2px 6px', borderRadius: '4px' }}>
                         {t.ticket_type}
@@ -139,13 +183,26 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <select 
-                        value={t.status} 
-                        onChange={(e) => handleStatusChange(t.id, e.target.value)} 
-                        style={{ fontSize: '12px', padding: '4px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
-                      >
-                        {statuses.map((s) => (<option key={s} value={s}>{s}</option>))}
-                      </select>
+                      {/* Butoane rapide cu săgeți */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px' }}>
+                        <button 
+                          onClick={() => handlePrevStatus(t)} 
+                          disabled={statuses.indexOf(t.status) === 0}
+                          style={{ background: 'none', border: 'none', cursor: statuses.indexOf(t.status) === 0 ? 'not-allowed' : 'pointer', fontSize: '14px', color: statuses.indexOf(t.status) === 0 ? '#cbd5e1' : '#2563eb', fontWeight: 'bold' }}
+                          title="Mută în starea anterioară"
+                        >
+                          ◀
+                        </button>
+                        <span style={{ fontSize: '11px', fontWeight: '600', color: '#475569' }}>{t.status}</span>
+                        <button 
+                          onClick={() => handleNextStatus(t)} 
+                          disabled={statuses.indexOf(t.status) === statuses.length - 1}
+                          style={{ background: 'none', border: 'none', cursor: statuses.indexOf(t.status) === statuses.length - 1 ? 'not-allowed' : 'pointer', fontSize: '14px', color: statuses.indexOf(t.status) === statuses.length - 1 ? '#cbd5e1' : '#2563eb', fontWeight: 'bold' }}
+                          title="Mută în starea următoare"
+                        >
+                          ▶
+                        </button>
+                      </div>
 
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
                         <button onClick={() => handleSelfAssign(t.id)} style={{ background: '#0ea5e9', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
@@ -170,8 +227,8 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
       </div>
 
       {selectedTicket && (
-  <TechLogModal ticket={selectedTicket} currentUser={currentUser} currentRole={currentRole} showToast={showToast} onClose={() => setSelectedTicket(null)} />
-)}
+        <TechLogModal ticket={selectedTicket} currentUser={currentUser} currentRole={currentRole} showToast={showToast} onClose={() => setSelectedTicket(null)} />
+      )}
     </div>
   );
 }

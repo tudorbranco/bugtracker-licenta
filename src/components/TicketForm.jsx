@@ -52,7 +52,7 @@ function TicketForm({ onTicketCreated, currentUser, showToast }) {
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
         <div>
           <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>Titlu</label>
-          <input type="text" placeholder="Ex: Erore autentificare..." value={title} onChange={(e) => setTitle(e.target.value)} required style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', marginTop: '4px', boxSizing: 'border-box' }} />
+          <input type="text" placeholder="Ex: Eroare autentificare..." value={title} onChange={(e) => setTitle(e.target.value)} required style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', marginTop: '4px', boxSizing: 'border-box' }} />
         </div>
         <div>
           <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>Tip</label>

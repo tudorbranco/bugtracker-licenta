@@ -6,6 +6,7 @@ import TicketBoard from './components/TicketBoard';
 import AnalyticsView from './components/AnalyticsView';
 import BusinessDashboard from './components/BusinessDashboard';
 import TechWorkspace from './components/TechWorkspace';
+import TimeframeView from './components/TimeframeView'; // <--- Import nou
 import Toast from './components/Toast';
 import Papa from 'papaparse';
 import { getTickets, deleteTicket } from './services/api';
@@ -17,7 +18,7 @@ function App() {
   });
 
   const [tickets, setTickets] = useState([]);
-  const [activeTab, setActiveTab] = useState('board'); // 'board', 'backlog', 'business', 'tech', 'analytics', 'team'
+  const [activeTab, setActiveTab] = useState('board'); // 'board', 'backlog', 'timeframe', 'business', 'tech', 'analytics', 'team'
   const [toast, setToast] = useState(null);
 
   const showToast = (message, type = 'success') => {
@@ -57,7 +58,7 @@ function App() {
   }));
 
   const csv = Papa.unparse(data, {
-    delimiter: ";", // Folosim punct și virgulă pentru Excel România
+    delimiter: ";",
   });
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -72,7 +73,6 @@ function App() {
 };
 
   const handlePrintReport = () => {
-    // Cream un element temporar de tip fereastră curat dedicat doar pentru raportul de licență
     const printWindow = window.open('', '_blank');
     
     const htmlContent = `
@@ -83,19 +83,15 @@ function App() {
           <style>
             body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
             h1 { color: #0f172a; border-bottom: 2px solid #2563eb; padding-bottom: 10px; }
-            .metrics { display: flex; gap: 20px; margin-bottom: 20px; }
-            .card { background: #f8fafc; border: 1px solid #cbd5e1; padding: 15px; border-radius: 8px; flex: 1; }
             table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
             th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; }
-            th { background: #0f172a; color: #white; }
+            th { background: #0f172a; color: #fff; }
           </style>
         </head>
         <body>
           <h1>Raport Tehnic și Management - BugTracker</h1>
           <p>Generat în data de: ${new Date().toLocaleString()}</p>
-          
           <h3>Sumar Tichete Active: Total ${tickets.length}</h3>
-          
           <table>
             <thead>
               <tr>
@@ -120,7 +116,6 @@ function App() {
               `).join('')}
             </tbody>
           </table>
-          
           <script>
             window.onload = function() {
               window.print();
@@ -195,6 +190,12 @@ function App() {
             style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', background: activeTab === 'backlog' ? '#2563eb' : '#fff', color: activeTab === 'backlog' ? '#fff' : '#475569', fontWeight: '600', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
           >
             📋 Backlog & Listă
+          </button>
+          <button 
+            onClick={() => setActiveTab('timeframe')} 
+            style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', background: activeTab === 'timeframe' ? '#2563eb' : '#fff', color: activeTab === 'timeframe' ? '#fff' : '#475569', fontWeight: '600', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
+          >
+            ⏳ Timeframe
           </button>
           <button 
             onClick={() => setActiveTab('business')} 
@@ -308,6 +309,10 @@ function App() {
             </div>
           )}
         </div>
+      )}
+
+      {activeTab === 'timeframe' && (
+        <TimeframeView tickets={tickets} />
       )}
 
       {activeTab === 'business' && (
