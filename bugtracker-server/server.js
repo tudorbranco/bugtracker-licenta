@@ -99,24 +99,36 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// 3. LISTARE UTILIZATORI ÎN AȘTEPTARE (Pentru Admin)
-app.get('/api/admin/pending-users', async (req, res) => {
+// 3. LISTARE TOȚI UTILIZATORII (Pentru Panoul de Admin)
+app.get('/api/admin/users', async (req, res) => {
   try {
-    const users = await pool.query('SELECT id, username, email, role, created_at FROM users WHERE is_approved = FALSE');
+    const users = await pool.query('SELECT id, username, email, role, is_approved, created_at FROM users ORDER BY id DESC');
     res.json(users.rows);
   } catch (err) {
     res.status(500).json({ error: 'Erore la preluarea utilizatorilor.' });
   }
 });
 
-// 4. APROBARE CONT DE CĂTRE ADMIN
+// 4. APROBARE / REVOCARE ACCES UTILIZATOR
 app.put('/api/admin/approve-user/:id', async (req, res) => {
   const { id } = req.params;
+  const { is_approved } = req.body;
   try {
-    await pool.query('UPDATE users SET is_approved = TRUE WHERE id = $1', [id]);
-    res.json({ message: 'Utilizator aprobat cu succes!' });
+    await pool.query('UPDATE users SET is_approved = $1 WHERE id = $2', [is_approved, id]);
+    res.json({ message: 'Statusul utilizatorului a fost actualizat!' });
   } catch (err) {
-    res.status(500).json({ error: 'Erore la aprobarea contului.' });
+    res.status(500).json({ error: 'Erore la actualizarea contului.' });
+  }
+});
+
+// 4.1 ȘTERGERE / REFUZ DEFINITIV UTILIZATOR
+app.delete('/api/admin/user/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query('DELETE FROM users WHERE id = $1', [id]);
+    res.json({ message: 'Utilizator șters/refuzat cu succes!' });
+  } catch (err) {
+    res.status(500).json({ error: 'Erore la ștergerea utilizatorului.' });
   }
 });
 
