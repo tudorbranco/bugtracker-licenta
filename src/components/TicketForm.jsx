@@ -6,7 +6,7 @@ function TicketForm({ onTicketCreated, currentUser, showToast }) {
   const [description, setDescription] = useState('');
   const [ticketType, setTicketType] = useState('Bug');
   const [severity, setSeverity] = useState('Medium');
-  const [estimate, setEstimate] = useState('4h');
+  const [estimate, setEstimate] = useState(''); // <--- Lăsat gol by default pentru a permite tichete fără estimare
   const [isOpen, setIsOpen] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -22,6 +22,7 @@ function TicketForm({ onTicketCreated, currentUser, showToast }) {
       });
       setTitle('');
       setDescription('');
+      setEstimate('');
       setIsOpen(false);
       showToast('Tichet creat cu succes în baza de date!', 'success');
       onTicketCreated();
@@ -73,7 +74,7 @@ function TicketForm({ onTicketCreated, currentUser, showToast }) {
         </div>
         <div>
           <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>Estimare</label>
-          <input type="text" placeholder="Ex: 3h" value={estimate} onChange={(e) => setEstimate(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', marginTop: '4px', boxSizing: 'border-box' }} />
+          <input type="text" placeholder="Ex: 3h sau 2d" value={estimate} onChange={(e) => setEstimate(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', marginTop: '4px', boxSizing: 'border-box' }} />
         </div>
       </div>
 
