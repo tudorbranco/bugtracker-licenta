@@ -8,12 +8,7 @@ require('dotenv').config();
 
 const app = express();
 app.use(express.json());
-
-app.use(cors({
-  origin: ['https://bugtracker-licenta.vercel.app', 'http://localhost:5173', 'http://localhost:3000'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(cors());
 
 const pool = new Pool(
   process.env.DATABASE_URL
