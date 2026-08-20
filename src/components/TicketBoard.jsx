@@ -8,6 +8,7 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
   const [severityFilter, setSeverityFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('All'); // <--- Stare nouă pentru filtru status
   const [onlyMyTasks, setOnlyMyTasks] = useState(false);
 
   const handleStatusChange = async (id, newStatus) => {
@@ -40,7 +41,7 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
   };
 
   const handleDragOver = (e) => {
-    e.preventDefault(); // Necesar pentru a permite plasarea (drop)
+    e.preventDefault();
   };
 
   const handleDrop = (e, targetStatus) => {
@@ -91,21 +92,24 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
     );
   };
 
+  // Modificat pentru a include statusFilter
   const filteredTickets = tickets.filter(t => {
     const matchesSearch = t.title.toLowerCase().includes(searchTerm.toLowerCase()) || (t.description && t.description.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesType = typeFilter === 'All' || t.ticket_type === typeFilter;
     const matchesSeverity = severityFilter === 'All' || t.severity === severityFilter;
+    const matchesStatus = statusFilter === 'All' || t.status === statusFilter; // <--- Logica filtrului
     const matchesMyTasks = !onlyMyTasks || t.assignee === currentUser;
-    return matchesSearch && matchesType && matchesSeverity && matchesMyTasks;
+    
+    return matchesSearch && matchesType && matchesSeverity && matchesStatus && matchesMyTasks;
   });
 
   return (
     <div>
       {/* Bara de Filtre Avansate */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '12px', marginBottom: '20px', background: '#fff', padding: '16px', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', alignItems: 'center' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr auto', gap: '12px', marginBottom: '20px', background: '#fff', padding: '16px', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', alignItems: 'center' }}>
         <input 
           type="text" 
-          placeholder="🔍 Caută tichet după titlu sau descriere..." 
+          placeholder="🔍 Caută tichet..." 
           value={searchTerm} 
           onChange={(e) => setSearchTerm(e.target.value)} 
           style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }}
@@ -131,6 +135,20 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
           <option value="Medium">Medium</option>
           <option value="Low">Low</option>
         </select>
+        
+        {/* Noul select pentru filtru status */}
+        <select 
+          value={statusFilter} 
+          onChange={(e) => setStatusFilter(e.target.value)} 
+          style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', background: '#fff', outline: 'none' }}
+        >
+          <option value="All">Toate stadiile</option>
+          <option value="To Do">To Do</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Code Review">Code Review</option>
+          <option value="Done">Done</option>
+        </select>
+
         <button 
           onClick={() => setOnlyMyTasks(!onlyMyTasks)}
           style={{ padding: '8px 14px', borderRadius: '6px', border: 'none', background: onlyMyTasks ? '#2563eb' : '#e2e8f0', color: onlyMyTasks ? '#fff' : '#334155', fontWeight: '600', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap' }}
@@ -142,6 +160,9 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
       {/* Coloanele Kanban cu Drag & Drop */}
       <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '10px' }}>
         {statuses.map((status) => {
+          // Filtrăm coloanele ca să nu mai afișăm coloana dacă s-a selectat o stare anume
+          if (statusFilter !== 'All' && status !== statusFilter) return null;
+
           const colTickets = filteredTickets.filter((t) => t.status === status);
           return (
             <div 
