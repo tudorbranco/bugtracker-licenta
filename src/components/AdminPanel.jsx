@@ -1,5 +1,3 @@
-// src/components/AdminPanel.jsx
-
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -29,10 +27,20 @@ function AdminPanel({ showToast }) {
       await axios.put(`${API_URL}/admin/user-status/${id}`, { status }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      showToast('Status actualizat cu succes!', 'success');
+      
+      if (typeof showToast === 'function') {
+        showToast('Status actualizat cu succes!', 'success');
+      } else {
+        window.alert('Status actualizat cu succes!');
+      }
       fetchUsers();
     } catch (err) {
-      showToast(err.response?.data?.error || 'Eroare la actualizarea statusului.', 'error');
+      const errorMsg = err.response?.data?.error || 'Eroare la actualizarea statusului.';
+      if (typeof showToast === 'function') {
+        showToast(errorMsg, 'error');
+      } else {
+        window.alert(errorMsg);
+      }
     }
   };
 
@@ -43,10 +51,20 @@ function AdminPanel({ showToast }) {
         await axios.delete(`${API_URL}/admin/user/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        showToast('Utilizator șters definitiv.', 'info');
+        
+        if (typeof showToast === 'function') {
+          showToast('Utilizator șters definitiv.', 'info');
+        } else {
+          window.alert('Utilizator șters definitiv.');
+        }
         fetchUsers();
       } catch (err) {
-        showToast(err.response?.data?.error || 'Eroare la ștergerea utilizatorului.', 'error');
+        const errorMsg = err.response?.data?.error || 'Eroare la ștergerea utilizatorului.';
+        if (typeof showToast === 'function') {
+          showToast(errorMsg, 'error');
+        } else {
+          window.alert(errorMsg);
+        }
       }
     }
   };

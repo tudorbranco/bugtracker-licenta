@@ -1,5 +1,3 @@
-// server.js (Înlocuiește complet rutele de update status și delete user)
-
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -118,9 +116,9 @@ app.put('/api/admin/user-status/:id', async (req, res) => {
       const userRes = await pool.query('SELECT username FROM users WHERE id = $1', [id]);
       if (userRes.rows.length > 0) {
         const username = userRes.rows[0].username;
-        const ticketsRes = await pool.query('SELECT count(*) FROM tickets WHERE assignee = $1', [username]);
+        const ticketsRes = await pool.query("SELECT count(*) FROM tickets WHERE assignee = $1 AND status != 'Done'", [username]);
         if (parseInt(ticketsRes.rows[0].count) > 0) {
-          return res.status(400).json({ error: 'Nu poți dezactiva un utilizator cu tichete asignate. Reasignează-le mai întâi!' });
+          return res.status(400).json({ error: 'Acest utilizator are tichete active (nefinalizate). Reasignează-le înainte de a-l dezactiva!' });
         }
       }
     }
@@ -140,9 +138,9 @@ app.delete('/api/admin/user/:id', async (req, res) => {
     const userRes = await pool.query('SELECT username FROM users WHERE id = $1', [id]);
     if (userRes.rows.length > 0) {
       const username = userRes.rows[0].username;
-      const ticketsRes = await pool.query('SELECT count(*) FROM tickets WHERE assignee = $1', [username]);
+      const ticketsRes = await pool.query("SELECT count(*) FROM tickets WHERE assignee = $1 AND status != 'Done'", [username]);
       if (parseInt(ticketsRes.rows[0].count) > 0) {
-        return res.status(400).json({ error: 'Nu poți șterge un utilizator cu tichete asignate. Reasignează-le mai întâi!' });
+        return res.status(400).json({ error: 'Nu poți șterge un utilizator cu tichete active (nefinalizate). Reasignează-le mai întâi!' });
       }
     }
 
