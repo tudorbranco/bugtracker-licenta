@@ -6,7 +6,8 @@ function TicketForm({ onTicketCreated, currentUser, showToast }) {
   const [description, setDescription] = useState('');
   const [ticketType, setTicketType] = useState('Bug');
   const [severity, setSeverity] = useState('Medium');
-  const [estimate, setEstimate] = useState(''); // <--- Lăsat gol by default pentru a permite tichete fără estimare
+  const [department, setDepartment] = useState('Dev'); // <--- Câmp nou
+  const [estimate, setEstimate] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -18,13 +19,15 @@ function TicketForm({ onTicketCreated, currentUser, showToast }) {
         ticket_type: ticketType,
         severity,
         estimate,
+        department, // <--- Trimitem departamentul către backend
         created_by: currentUser
       });
       setTitle('');
       setDescription('');
       setEstimate('');
+      setDepartment('Dev');
       setIsOpen(false);
-      showToast('Tichet creat cu succes în baza de date!', 'success');
+      showToast('Tichet creat cu succes!', 'success');
       onTicketCreated();
     } catch (err) {
       console.error(err);
@@ -50,8 +53,8 @@ function TicketForm({ onTicketCreated, currentUser, showToast }) {
         <button type="button" onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', fontSize: '16px', cursor: 'pointer', color: '#64748b' }}>✕</button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-        <div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '12px' }}>
+        <div style={{ gridColumn: 'span 2' }}>
           <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>Titlu</label>
           <input type="text" placeholder="Ex: Eroare autentificare..." value={title} onChange={(e) => setTitle(e.target.value)} required style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', marginTop: '4px', boxSizing: 'border-box' }} />
         </div>
@@ -64,6 +67,16 @@ function TicketForm({ onTicketCreated, currentUser, showToast }) {
           </select>
         </div>
         <div>
+          <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>Departament</label>
+          <select value={department} onChange={(e) => setDepartment(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', marginTop: '4px', background: '#fff', boxSizing: 'border-box' }}>
+            <option value="Dev">Dev</option>
+            <option value="QA">QA</option>
+            <option value="Frontend">Frontend</option>
+            <option value="Backend">Backend</option>
+            <option value="DevOps">DevOps</option>
+          </select>
+        </div>
+        <div>
           <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>Severitate</label>
           <select value={severity} onChange={(e) => setSeverity(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', marginTop: '4px', background: '#fff', boxSizing: 'border-box' }}>
             <option value="Low">Low</option>
@@ -72,10 +85,11 @@ function TicketForm({ onTicketCreated, currentUser, showToast }) {
             <option value="Critical">Critical</option>
           </select>
         </div>
-        <div>
-          <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>Estimare</label>
-          <input type="text" placeholder="Ex: 3h sau 2d" value={estimate} onChange={(e) => setEstimate(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', marginTop: '4px', boxSizing: 'border-box' }} />
-        </div>
+      </div>
+
+      <div style={{ marginBottom: '12px' }}>
+        <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>Estimare</label>
+        <input type="text" placeholder="Ex: 3h sau 2d" value={estimate} onChange={(e) => setEstimate(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', marginTop: '4px', boxSizing: 'border-box' }} />
       </div>
 
       <div style={{ marginBottom: '16px' }}>

@@ -6,7 +6,7 @@ import EditTicketModal from './EditTicketModal';
 function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }) {
   const statuses = ['To Do', 'In Progress', 'Code Review', 'Done'];
   const [selectedTicket, setSelectedTicket] = useState(null);
-  const [editingTicket, setEditingTicket] = useState(null); // <--- Stare pentru editare tichet
+  const [editingTicket, setEditingTicket] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
   const [severityFilter, setSeverityFilter] = useState('All');
@@ -100,7 +100,11 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
     const matchesStatus = statusFilter === 'All' || t.status === statusFilter;
     const matchesMyTasks = !onlyMyTasks || t.assignee === currentUser;
     
-    return matchesSearch && matchesType && matchesSeverity && matchesStatus && matchesMyTasks;
+    // Filtrare pe departament / grup: Adminii și Product Ownerii vad tot, membrii vad doar tichetele din grupul lor (ex: Dev, QA)
+    const isPrivileged = currentRole === 'Admin' || currentRole === 'ProductOwner';
+    const matchesDepartment = isPrivileged || !t.department || t.department.toLowerCase() === currentUser.toLowerCase() || t.assignee === currentUser;
+
+    return matchesSearch && matchesType && matchesSeverity && matchesStatus && matchesMyTasks && matchesDepartment;
   });
 
   return (
@@ -182,17 +186,24 @@ function TicketBoard({ tickets, onRefresh, currentUser, currentRole, showToast }
                     key={t.id} 
                     draggable 
                     onDragStart={(e) => handleDragStart(e, t.id)}
-                    style={{ background: '#fff', padding: '14px', marginBottom: '12px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0', cursor: 'grab' }}
+                    style={{ background: '#fff', padding: '14px', marginBottom: '12px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0', cursor: 'grab', wordBreak: 'break-word', overflowWrap: 'break-word' }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: '600', color: '#2563eb', background: '#eff6ff', padding: '2px 6px', borderRadius: '4px' }}>
-                        {t.ticket_type}
-                      </span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px', gap: '6px' }}>
+                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '600', color: '#2563eb', background: '#eff6ff', padding: '2px 6px', borderRadius: '4px' }}>
+                          {t.ticket_type}
+                        </span>
+                        {t.department && (
+                          <span style={{ fontSize: '11px', fontWeight: '600', color: '#7c3aed', background: '#f3e8ff', padding: '2px 6px', borderRadius: '4px' }}>
+                            {t.department}
+                          </span>
+                        )}
+                      </div>
                       {getSeverityBadge(t.severity)}
                     </div>
 
-                    <h5 style={{ margin: '6px 0', fontSize: '14px', color: '#0f172a' }}>{t.title}</h5>
-                    <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 10px 0', lineHeight: '1.4' }}>{t.description}</p>
+                    <h5 style={{ margin: '6px 0', fontSize: '14px', color: '#0f172a', wordBreak: 'break-word', overflowWrap: 'break-word' }}>{t.title}</h5>
+                    <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 10px 0', lineHeight: '1.4', wordBreak: 'break-word', overflowWrap: 'break-word' }}>{t.description}</p>
 
                     <div style={{ fontSize: '11px', color: '#64748b', background: '#f8fafc', padding: '6px', borderRadius: '4px', marginBottom: '10px' }}>
                       <div>👤 <strong>{t.assignee}</strong></div>

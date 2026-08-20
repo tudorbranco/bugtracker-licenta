@@ -1,24 +1,25 @@
 import { useState } from 'react';
-import { updateTicket } from '../services/api'; // Asigură-te că ai funcția definită sau o poți adăuga direct în api.js
+import { updateTicket } from '../services/api';
 
 function EditTicketModal({ ticket, onClose, onRefresh, showToast }) {
   const [title, setTitle] = useState(ticket.title || '');
   const [description, setDescription] = useState(ticket.description || '');
   const [ticketType, setTicketType] = useState(ticket.ticket_type || 'Bug');
   const [severity, setSeverity] = useState(ticket.severity || 'Medium');
+  const [department, setDepartment] = useState(ticket.department || 'Dev'); // <--- Stare nouă pentru departament
   const [estimate, setEstimate] = useState(ticket.estimate || '');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Apel către API (poți folosi axios/fetch direct sau prin api.js)
       await updateTicket(ticket.id, {
         title,
         description,
         ticket_type: ticketType,
         severity,
         assignee: ticket.assignee,
-        estimate
+        estimate,
+        department // <--- Trimitem departamentul către backend
       });
       showToast('Tichet actualizat cu succes!', 'success');
       onRefresh();
@@ -31,7 +32,7 @@ function EditTicketModal({ ticket, onClose, onRefresh, showToast }) {
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-      <form onSubmit={handleSubmit} style={{ background: '#fff', padding: '24px', borderRadius: '10px', width: '450px', maxWidth: '90%', border: '1px solid #cbd5e1', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+      <form onSubmit={handleSubmit} style={{ background: '#fff', padding: '24px', borderRadius: '10px', width: '480px', maxWidth: '90%', border: '1px solid #cbd5e1', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h4 style={{ margin: 0, color: '#1e293b', fontSize: '16px' }}>Editează Tichetul #{ticket.id}</h4>
           <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '16px', cursor: 'pointer', color: '#64748b' }}>✕</button>
@@ -42,7 +43,7 @@ function EditTicketModal({ ticket, onClose, onRefresh, showToast }) {
           <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', marginTop: '4px', boxSizing: 'border-box' }} />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '12px' }}>
           <div>
             <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>Tip</label>
             <select value={ticketType} onChange={(e) => setTicketType(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', marginTop: '4px', background: '#fff', boxSizing: 'border-box' }}>
@@ -52,8 +53,18 @@ function EditTicketModal({ ticket, onClose, onRefresh, showToast }) {
             </select>
           </div>
           <div>
+            <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>Departament</label>
+            <select value={department} onChange={(e) => setDepartment(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', marginTop: '4px', background: '#fff', boxSizing: 'border-box' }}>
+              <option value="Dev">Dev</option>
+              <option value="QA">QA</option>
+              <option value="Frontend">Frontend</option>
+              <option value="Backend">Backend</option>
+              <option value="DevOps">DevOps</option>
+            </select>
+          </div>
+          <div>
             <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>Severitate</label>
-            <select value={severity} onChange={(e) => setSeverity(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', marginTop: '4px', background: '#fff', background: '#fff', boxSizing: 'border-box' }}>
+            <select value={severity} onChange={(e) => setSeverity(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', marginTop: '4px', background: '#fff', boxSizing: 'border-box' }}>
               <option value="Low">Low</option>
               <option value="Medium">Medium</option>
               <option value="High">High</option>

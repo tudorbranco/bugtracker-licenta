@@ -130,14 +130,14 @@ app.get('/api/tickets', async (req, res) => {
   }
 });
 
-// 6. CREARE TICHET NOU
+// 6. CREARE TICHET NOU (Actualizat cu câmpul department)
 app.post('/api/tickets', async (req, res) => {
-  const { title, description, ticket_type, severity, assignee, estimate, created_by } = req.body;
+  const { title, description, ticket_type, severity, assignee, estimate, department, created_by } = req.body;
   try {
     const newTicket = await pool.query(
-      `INSERT INTO tickets (title, description, ticket_type, severity, status, assignee, estimate, created_by) 
-       VALUES ($1, $2, $3, $4, 'To Do', $5, $6, $7) RETURNING *`,
-      [title, description, ticket_type || 'Bug', severity || 'Medium', assignee || 'Neatribuit', estimate ? estimate : null, created_by]
+      `INSERT INTO tickets (title, description, ticket_type, severity, status, assignee, estimate, department, created_by) 
+       VALUES ($1, $2, $3, $4, 'To Do', $5, $6, $7, $8) RETURNING *`,
+      [title, description, ticket_type || 'Bug', severity || 'Medium', assignee || 'Neatribuit', estimate ? estimate : null, department || 'Dev', created_by]
     );
     res.status(201).json(newTicket.rows[0]);
   } catch (err) {
@@ -221,16 +221,17 @@ app.delete('/api/tickets/:id', async (req, res) => {
     res.status(500).json({ error: 'Erore la ștergere.' });
   }
 });
-// 12. ACTUALIZARE TICHET (Editare completă)
+
+// 12. ACTUALIZARE TICHET (Editare completă - Actualizat cu department)
 app.put('/api/tickets/:id', async (req, res) => {
   const { id } = req.params;
-  const { title, description, ticket_type, severity, assignee, estimate } = req.body;
+  const { title, description, ticket_type, severity, assignee, estimate, department } = req.body;
   try {
     const updated = await pool.query(
       `UPDATE tickets 
-       SET title = $1, description = $2, ticket_type = $3, severity = $4, assignee = $5, estimate = $6 
-       WHERE id = $7 RETURNING *`,
-      [title, description, ticket_type, severity, assignee || 'Neatribuit', estimate ? estimate : null, id]
+       SET title = $1, description = $2, ticket_type = $3, severity = $4, assignee = $5, estimate = $6, department = $7 
+       WHERE id = $8 RETURNING *`,
+      [title, description, ticket_type, severity, assignee || 'Neatribuit', estimate ? estimate : null, department, id]
     );
     if (updated.rows.length === 0) {
       return res.status(404).json({ error: 'Tichetul nu a fost găsit.' });
